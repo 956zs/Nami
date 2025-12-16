@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-2.2.0-blue)
+![Version](https://img.shields.io/badge/version-2.2.1-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Linux-orange)
 
@@ -210,6 +210,10 @@ bun run build
 ---
 
 ## 更新日誌
+
+### v2.2.1 (2024-12-16)
+- 🔧 **StrictMode 修復** - 關閉 React StrictMode 解決開發模式下 WebSocket 連線問題
+- 🔧 **版本號自動化** - Server 版本號從 package.json 讀取
 
 ### v2.2.0 (2024-12-16)
 - 🔧 **WebSocket 優化** - 修復連線洩漏問題，每個分頁只建立一個連線

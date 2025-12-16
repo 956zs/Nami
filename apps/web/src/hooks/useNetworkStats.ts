@@ -53,6 +53,7 @@ export function useNetworkStats(
     const updateIntervalRef = useRef<number | null>(null);
     const connectRef = useRef<(() => void) | null>(null);
     const reconnectIntervalRef = useRef(reconnectInterval);
+    const isMountedRef = useRef(true);
 
     useEffect(() => {
         selectedInterfaceRef.current = selectedInterface;
@@ -154,9 +155,12 @@ export function useNetworkStats(
                     setIsConnected(false);
                 }, 1500);
 
-                reconnectTimeoutRef.current = window.setTimeout(() => {
-                    connectRef.current?.();
-                }, reconnectIntervalRef.current);
+                // Only reconnect if still mounted
+                if (isMountedRef.current) {
+                    reconnectTimeoutRef.current = window.setTimeout(() => {
+                        connectRef.current?.();
+                    }, reconnectIntervalRef.current);
+                }
             };
 
             ws.onerror = () => {
@@ -179,12 +183,11 @@ export function useNetworkStats(
 
     // Only connect once on mount
     useEffect(() => {
+        isMountedRef.current = true;
         connect();
         return () => {
-            if (wsRef.current) {
-                wsRef.current.close();
-                wsRef.current = null;
-            }
+            isMountedRef.current = false;
+            // Clear timers first to prevent reconnect
             if (reconnectTimeoutRef.current) {
                 clearTimeout(reconnectTimeoutRef.current);
                 reconnectTimeoutRef.current = null;
@@ -192,6 +195,11 @@ export function useNetworkStats(
             if (disconnectDebounceRef.current) {
                 clearTimeout(disconnectDebounceRef.current);
                 disconnectDebounceRef.current = null;
+            }
+            // Then close WebSocket
+            if (wsRef.current) {
+                wsRef.current.close();
+                wsRef.current = null;
             }
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps -- Only connect once on mount
