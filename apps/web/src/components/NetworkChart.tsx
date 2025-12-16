@@ -9,7 +9,7 @@ import {
     Area,
 } from "recharts";
 import type { NetworkInterface } from "@/types";
-import { formatSpeed, formatTime, formatBytes } from "@/lib/format";
+import { formatSpeed, formatRelativeTime, formatBytes } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 
 interface NetworkChartProps {
@@ -17,10 +17,10 @@ interface NetworkChartProps {
     interfaceName: string;
 }
 
-export function NetworkChart({ history, interfaceName }: NetworkChartProps) {
+export function NetworkChart({ history }: NetworkChartProps) {
     const chartData = useMemo(() => {
         return history.map((item, index) => ({
-            time: formatTime(Date.now() - (history.length - 1 - index) * 1000),
+            time: formatRelativeTime((index - history.length + 1) * 1000),
             rxSpeed: item.rxSpeed,
             txSpeed: item.txSpeed,
         }));
@@ -135,8 +135,8 @@ export function NetworkChart({ history, interfaceName }: NetworkChartProps) {
                                         borderRadius: "8px",
                                     }}
                                     labelStyle={{ color: "#94a3b8" }}
-                                    formatter={(value: number, name: string) => [
-                                        formatSpeed(value),
+                                    formatter={(value: number | undefined, name: string | undefined) => [
+                                        formatSpeed(value ?? 0),
                                         name === "rxSpeed" ? "Download (RX)" : "Upload (TX)",
                                     ]}
                                 />

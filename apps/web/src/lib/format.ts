@@ -31,3 +31,11 @@ export function formatTime(timestamp: number): string {
         second: "2-digit",
     });
 }
+
+/**
+ * Format relative time offset in milliseconds to a readable string (e.g., "-45s", "0s")
+ */
+export function formatRelativeTime(offsetMs: number): string {
+    const seconds = Math.round(offsetMs / 1000);
+    return `${seconds}s`;
+}

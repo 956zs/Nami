@@ -51,6 +51,7 @@ export function useNetworkStats(
     const isFirstMessageRef = useRef(true);
     const latestDataRef = useRef<NetworkStatsPayload | null>(null);
     const updateIntervalRef = useRef<number | null>(null);
+    const connectRef = useRef<(() => void) | null>(null);
 
     useEffect(() => {
         selectedInterfaceRef.current = selectedInterface;
@@ -153,7 +154,7 @@ export function useNetworkStats(
                 }, 1500);
 
                 reconnectTimeoutRef.current = window.setTimeout(() => {
-                    connect();
+                    connectRef.current?.();
                 }, reconnectInterval);
             };
 
@@ -165,7 +166,13 @@ export function useNetworkStats(
         }
     }, [reconnectInterval]);
 
+    // Update connectRef whenever connect changes
     useEffect(() => {
+        connectRef.current = connect;
+    }, [connect]);
+
+    useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- WebSocket connection needs to be established on mount
         connect();
         return () => {
             if (wsRef.current) wsRef.current.close();
