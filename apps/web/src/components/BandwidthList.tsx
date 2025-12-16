@@ -2,11 +2,13 @@ import { memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Sparkline } from "@/components/Sparkline";
 import type { ProcessBandwidth } from "@/types";
 
 interface BandwidthListProps {
     bandwidth: ProcessBandwidth[];
     enabled: boolean;
+    bandwidthHistory?: Map<number, { sent: number; received: number }[]>;
 }
 
 function formatKBs(kbs: number): string {
@@ -15,7 +17,7 @@ function formatKBs(kbs: number): string {
     return `${(kbs / 1024).toFixed(2)} MB/s`;
 }
 
-export const BandwidthList = memo(function BandwidthList({ bandwidth, enabled }: BandwidthListProps) {
+export const BandwidthList = memo(function BandwidthList({ bandwidth, enabled, bandwidthHistory }: BandwidthListProps) {
     if (!enabled) {
         return (
             <Card className="bg-slate-900/50 border-slate-800">
@@ -51,33 +53,46 @@ export const BandwidthList = memo(function BandwidthList({ bandwidth, enabled }:
             <CardContent>
                 <ScrollArea className="h-[400px]">
                     <div className="space-y-2 pr-4">
-                        {bandwidth.map((proc, idx) => (
-                            <div
-                                key={`${proc.pid}-${idx}`}
-                                className="p-3 rounded-lg border border-slate-700/50 bg-slate-800/40"
-                            >
-                                <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-medium text-white">{proc.name}</span>
-                                        <span className="text-xs text-slate-500">PID: {proc.pid}</span>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="bg-cyan-950/30 rounded p-2">
-                                        <div className="text-xs text-cyan-400 mb-1">Download</div>
-                                        <div className="text-lg font-bold text-cyan-300">
-                                            {formatKBs(proc.receivedKBs)}
+                        {bandwidth.map((proc, idx) => {
+                            const history = bandwidthHistory?.get(proc.pid) || [];
+                            const rxData = history.map(h => h.received);
+                            const txData = history.map(h => h.sent);
+
+                            return (
+                                <div
+                                    key={`${proc.pid}-${idx}`}
+                                    className="p-3 rounded-lg border border-slate-700/50 bg-slate-800/40"
+                                >
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium text-white">{proc.name}</span>
+                                            <span className="text-xs text-slate-500">PID: {proc.pid}</span>
                                         </div>
                                     </div>
-                                    <div className="bg-pink-950/30 rounded p-2">
-                                        <div className="text-xs text-pink-400 mb-1">Upload</div>
-                                        <div className="text-lg font-bold text-pink-300">
-                                            {formatKBs(proc.sentKBs)}
+                                    <div className="flex items-end justify-between">
+                                        <div className="grid grid-cols-2 gap-4 flex-1">
+                                            <div className="bg-cyan-950/30 rounded p-2">
+                                                <div className="text-xs text-cyan-400 mb-1">Download</div>
+                                                <div className="text-lg font-bold text-cyan-300">
+                                                    {formatKBs(proc.receivedKBs)}
+                                                </div>
+                                            </div>
+                                            <div className="bg-pink-950/30 rounded p-2">
+                                                <div className="text-xs text-pink-400 mb-1">Upload</div>
+                                                <div className="text-lg font-bold text-pink-300">
+                                                    {formatKBs(proc.sentKBs)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {/* Sparkline charts in bottom-right */}
+                                        <div className="flex flex-col gap-1 ml-3">
+                                            <Sparkline data={rxData} color="#06b6d4" width={60} height={18} />
+                                            <Sparkline data={txData} color="#ec4899" width={60} height={18} />
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </ScrollArea>
             </CardContent>

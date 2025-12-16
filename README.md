@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-2.2.1-blue)
+![Version](https://img.shields.io/badge/version-2.3.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Linux-orange)
 
@@ -210,6 +210,10 @@ bun run build
 ---
 
 ## 更新日誌
+
+### v2.3.0 (2024-12-16)
+- ✨ **Sparkline 圖表** - 每個程序流量項目右下角新增迷你折線圖
+- 📊 **流量歷史追蹤** - 追蹤每個 PID 最近 30 個數據點
 
 ### v2.2.1 (2024-12-16)
 - 🔧 **StrictMode 修復** - 關閉 React StrictMode 解決開發模式下 WebSocket 連線問題

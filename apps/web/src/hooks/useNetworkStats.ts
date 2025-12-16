@@ -20,6 +20,7 @@ interface UseNetworkStatsReturn {
     isConnected: boolean;
     error: string | null;
     history: Map<string, NetworkInterface[]>;
+    bandwidthHistory: Map<number, { sent: number; received: number }[]>;
     refreshDetails: () => void;
 }
 
@@ -43,6 +44,7 @@ export function useNetworkStats(
     const [isConnected, setIsConnected] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [history, setHistory] = useState<Map<string, NetworkInterface[]>>(new Map());
+    const [bandwidthHistory, setBandwidthHistory] = useState<Map<number, { sent: number; received: number }[]>>(new Map());
 
     const wsRef = useRef<WebSocket | null>(null);
     const reconnectTimeoutRef = useRef<number | null>(null);
@@ -99,6 +101,19 @@ export function useNetworkStats(
                 }
                 return newHistory;
             });
+
+            // Update bandwidth history for sparklines (keep last 30 points)
+            if (data.bandwidth && data.bandwidth.length > 0) {
+                setBandwidthHistory((prev) => {
+                    const newHistory = new Map(prev);
+                    for (const proc of data.bandwidth) {
+                        const existing = newHistory.get(proc.pid) || [];
+                        const updated = [...existing, { sent: proc.sentKBs, received: proc.receivedKBs }].slice(-30);
+                        newHistory.set(proc.pid, updated);
+                    }
+                    return newHistory;
+                });
+            }
         }, updateInterval);
 
         return () => {
@@ -216,6 +231,7 @@ export function useNetworkStats(
         isConnected,
         error,
         history,
+        bandwidthHistory,
         refreshDetails,
     };
 }

@@ -29,6 +29,7 @@ function App() {
     isConnected,
     error,
     history,
+    bandwidthHistory,
     refreshDetails,
   } = useNetworkStats({
     updateInterval: settings.updateInterval,
@@ -198,7 +199,7 @@ function App() {
                 </Badge>
               )}
             </div>
-            <BandwidthList bandwidth={bandwidth} enabled={bandwidthEnabled} />
+            <BandwidthList bandwidth={bandwidth} enabled={bandwidthEnabled} bandwidthHistory={bandwidthHistory} />
           </TabsContent>
         </Tabs>
       </div>
