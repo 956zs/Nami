@@ -12,6 +12,10 @@ const UPDATE_INTERVAL = 1000;
 const clients = new Set<{ send: (data: string) => void }>();
 let totalConnections = 0;
 let statsLogInterval: ReturnType<typeof setInterval> | null = null;
+let maintenanceInterval: ReturnType<typeof setInterval> | null = null;
+
+// Maintenance interval - runs every 5 minutes to cleanup stale data
+const MAINTENANCE_INTERVAL = 5 * 60 * 1000;
 
 const app = new Elysia()
     .get("/", () => ({
@@ -97,6 +101,14 @@ statsLogInterval = setInterval(() => {
     console.log(`[stats] ${clients.size} clients, ${totalConnections} total`);
 }, 30000);
 
+// Periodic maintenance to prevent memory leaks
+maintenanceInterval = setInterval(() => {
+    const result = nethogsMonitor.cleanupStaleData();
+    if (result.processesRemoved > 0 || result.cacheEntriesRemoved > 0) {
+        console.log(`[maintenance] Cleaned: ${result.processesRemoved} processes, ${result.cacheEntriesRemoved} cache entries`);
+    }
+}, MAINTENANCE_INTERVAL);
+
 function broadcastStats() {
     if (clients.size === 0) return;
 
@@ -125,12 +137,14 @@ setInterval(broadcastStats, UPDATE_INTERVAL);
 process.on("SIGINT", () => {
     console.log("\nShutting down...");
     if (statsLogInterval) clearInterval(statsLogInterval);
+    if (maintenanceInterval) clearInterval(maintenanceInterval);
     nethogsMonitor.stop();
     process.exit(0);
 });
 
 process.on("SIGTERM", () => {
     if (statsLogInterval) clearInterval(statsLogInterval);
+    if (maintenanceInterval) clearInterval(maintenanceInterval);
     nethogsMonitor.stop();
     process.exit(0);
 });

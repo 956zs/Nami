@@ -231,6 +231,15 @@ export function getNetworkStats(): NetworkInterface[] {
         });
     }
 
+    // Cleanup stale interfaces that no longer exist
+    // This prevents memory leak from removed docker containers, VPNs, etc.
+    for (const name of previousStats.keys()) {
+        if (!currentStats.has(name)) {
+            previousStats.delete(name);
+            detailsCache.delete(name);
+        }
+    }
+
     // Sort by category then name
     result.sort((a, b) => {
         const categoryOrder = ["ethernet", "wireless", "vpn", "docker", "bridge", "virtual", "loopback", "other"];

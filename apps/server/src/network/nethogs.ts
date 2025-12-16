@@ -175,6 +175,52 @@ export class NethogsMonitor extends EventEmitter {
         return this.getData().slice(0, n);
     }
 
+    /**
+     * Active cleanup of stale data - call this periodically
+     * Enforces maximum cache size to prevent memory leaks
+     */
+    cleanupStaleData(): { processesRemoved: number; cacheEntriesRemoved: number } {
+        let processesRemoved = 0;
+        let cacheEntriesRemoved = 0;
+
+        // Clean up data for dead processes
+        for (const [pid] of this.data) {
+            try {
+                readFileSync(`/proc/${pid}/comm`);
+            } catch {
+                this.data.delete(pid);
+                processesRemoved++;
+            }
+        }
+
+        // Cleanup processNameCache - remove entries for dead processes
+        // Also enforce max cache size of 500 entries
+        const MAX_CACHE_SIZE = 500;
+
+        for (const [pid] of processNameCache) {
+            try {
+                readFileSync(`/proc/${pid}/comm`);
+            } catch {
+                processNameCache.delete(pid);
+                cacheEntriesRemoved++;
+            }
+        }
+
+        // If still too large, remove oldest entries (first in map)
+        if (processNameCache.size > MAX_CACHE_SIZE) {
+            const toDelete = processNameCache.size - MAX_CACHE_SIZE;
+            let deleted = 0;
+            for (const [pid] of processNameCache) {
+                if (deleted >= toDelete) break;
+                processNameCache.delete(pid);
+                deleted++;
+                cacheEntriesRemoved++;
+            }
+        }
+
+        return { processesRemoved, cacheEntriesRemoved };
+    }
+
     stop(): void {
         if (this.process) {
             this.process.kill("SIGTERM");

@@ -103,16 +103,23 @@ export function useNetworkStats(
             });
 
             // Update bandwidth history for sparklines (keep last 30 points)
+            // Also cleanup PIDs that no longer appear in bandwidth data
             if (data.bandwidth && data.bandwidth.length > 0) {
                 setBandwidthHistory((prev) => {
-                    const newHistory = new Map(prev);
+                    const newHistory = new Map<number, { sent: number; received: number }[]>();
+
+                    // Only keep PIDs that still exist in current data
                     for (const proc of data.bandwidth) {
-                        const existing = newHistory.get(proc.pid) || [];
+                        const existing = prev.get(proc.pid) || [];
                         const updated = [...existing, { sent: proc.sentKBs, received: proc.receivedKBs }].slice(-30);
                         newHistory.set(proc.pid, updated);
                     }
+
                     return newHistory;
                 });
+            } else {
+                // No bandwidth data - clear the history to free memory
+                setBandwidthHistory(new Map());
             }
         }, updateInterval);
 
