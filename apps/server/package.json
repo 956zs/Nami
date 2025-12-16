@@ -1,0 +1,16 @@
+{
+    "name": "@nami/server",
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "dev": "bun run --watch src/index.ts",
+        "start": "bun run src/index.ts"
+    },
+    "dependencies": {
+        "elysia": "^1.2.10"
+    },
+    "devDependencies": {
+        "@types/bun": "^1.1.14",
+        "typescript": "^5.7.2"
+    }
+}
