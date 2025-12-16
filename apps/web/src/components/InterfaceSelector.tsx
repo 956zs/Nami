@@ -41,7 +41,7 @@ export function InterfaceSelector({
     const currentInterface = interfaces.find((i) => i.name === selectedInterface);
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 overflow-hidden min-w-0">
             {/* Category Tabs - FIXED CONTRAST */}
             <Tabs defaultValue={availableCategories[0]} className="w-full">
                 <TabsList className="w-full flex-wrap h-auto gap-1 bg-slate-900 border border-slate-700 p-1.5">

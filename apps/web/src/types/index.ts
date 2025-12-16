@@ -1,6 +1,3 @@
-/**
- * Interface details
- */
 export interface InterfaceDetails {
     mac: string;
     mtu: number;
@@ -11,9 +8,6 @@ export interface InterfaceDetails {
     ipv6: string[];
 }
 
-/**
- * Network interface statistics
- */
 export interface NetworkInterface extends InterfaceDetails {
     name: string;
     category: string;
@@ -23,9 +17,6 @@ export interface NetworkInterface extends InterfaceDetails {
     txSpeed: number;
 }
 
-/**
- * Socket information
- */
 export interface SocketInfo {
     protocol: "tcp" | "udp";
     localAddr: string;
@@ -35,9 +26,6 @@ export interface SocketInfo {
     state: string;
 }
 
-/**
- * Process network information (from /proc)
- */
 export interface ProcessNetInfo {
     pid: number;
     name: string;
@@ -50,23 +38,14 @@ export interface ProcessNetInfo {
     sockets: SocketInfo[];
 }
 
-/**
- * Per-process bandwidth data (from nethogs)
- */
 export interface ProcessBandwidth {
     pid: number;
     name: string;
-    cmdline: string;
-    device: string;
+    user: string;
     sentKBs: number;
     receivedKBs: number;
-    sentTotal: number;
-    receivedTotal: number;
 }
 
-/**
- * WebSocket message payload
- */
 export interface NetworkStatsPayload {
     interfaces: NetworkInterface[];
     processes: ProcessNetInfo[];
@@ -76,9 +55,6 @@ export interface NetworkStatsPayload {
     timestamp: number;
 }
 
-/**
- * Data point for chart
- */
 export interface ChartDataPoint {
     time: string;
     timestamp: number;
@@ -86,9 +62,6 @@ export interface ChartDataPoint {
     txSpeed: number;
 }
 
-/**
- * Category info
- */
 export interface CategoryInfo {
     id: string;
     label: string;

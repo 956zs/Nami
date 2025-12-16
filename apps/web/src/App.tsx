@@ -46,35 +46,36 @@ function App() {
   const totalTx = interfaces.reduce((acc, i) => acc + i.txBytes, 0);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-slate-950 text-slate-100 overflow-x-hidden">
       {/* Header */}
       <header className="border-b border-slate-800 bg-slate-900/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">🐳</span>
-            <h1 className="text-xl font-semibold">Nami</h1>
-            <Badge variant="outline" className="border-cyan-600 text-cyan-400">v2.1</Badge>
+        <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xl sm:text-2xl">🐳</span>
+            <h1 className="text-lg sm:text-xl font-semibold">Nami</h1>
+            <Badge variant="outline" className="border-cyan-600 text-cyan-400 text-xs">v2.1</Badge>
             {bandwidthEnabled && (
-              <Badge className="bg-green-600/20 text-green-400 border-green-600/30 text-xs">
-                📈 Bandwidth
+              <Badge className="bg-green-600/20 text-green-400 border-green-600/30 text-xs hidden sm:inline-flex">
+                Bandwidth
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <SettingsDialog />
             <Button
               variant="ghost"
               size="sm"
               onClick={refreshDetails}
-              className="text-xs text-slate-300 hover:text-white hover:bg-slate-800"
+              className="text-xs text-slate-300 hover:text-white hover:bg-slate-800 px-2"
             >
-              🔄 Refresh
+              <span className="hidden sm:inline">🔄</span> Refresh
             </Button>
             <Badge
               variant={isConnected ? "default" : "destructive"}
-              className={isConnected ? "bg-green-600" : ""}
+              className={`text-xs ${isConnected ? "bg-green-600" : ""}`}
             >
-              {isConnected ? "● Connected" : "○ Disconnected"}
+              {isConnected ? "●" : "○"}
+              <span className="hidden sm:inline ml-1">{isConnected ? "Connected" : "Disconnected"}</span>
             </Badge>
           </div>
         </div>
@@ -130,6 +131,7 @@ function App() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Left: Interface Selector */}
               <Card className="bg-slate-900/50 border-slate-800">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-slate-300">
@@ -146,10 +148,11 @@ function App() {
                 </CardContent>
               </Card>
 
-              <div className="lg:col-span-2 space-y-4">
+              {/* Right: Chart only */}
+              <div className="lg:col-span-2">
                 {selectedInterface ? (
                   <>
-                    <div className="flex items-center gap-2 text-sm text-slate-300">
+                    <div className="flex items-center gap-2 text-sm text-slate-300 mb-2">
                       <span>Monitoring:</span>
                       <Badge variant="outline" className="font-mono border-slate-500 text-slate-200 bg-slate-800/50">
                         {selectedInterface}
@@ -167,11 +170,11 @@ function App() {
                     </CardContent>
                   </Card>
                 )}
-
-                {/* Top Bandwidth on main page */}
-                <TopBandwidth bandwidth={bandwidth} enabled={bandwidthEnabled} />
               </div>
             </div>
+
+            {/* Top Bandwidth - separate full-width section */}
+            <TopBandwidth bandwidth={bandwidth} enabled={bandwidthEnabled} />
           </TabsContent>
 
           {/* Processes Tab */}

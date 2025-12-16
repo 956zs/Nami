@@ -1,32 +1,37 @@
 import { spawn, type ChildProcess } from "child_process";
+import { readFileSync } from "fs";
 import { EventEmitter } from "events";
 
-/**
- * Per-process bandwidth data from nethogs
- */
 export interface ProcessBandwidth {
     pid: number;
     name: string;
-    cmdline: string;
-    device: string;
-    sentKBs: number;      // KB/s
-    receivedKBs: number;  // KB/s
-    sentTotal: number;    // Total KB
-    receivedTotal: number; // Total KB
+    user: string;
+    sentKBs: number;
+    receivedKBs: number;
 }
 
-/**
- * Nethogs process manager - spawns nethogs and parses its output
- */
+// Cache for process names
+const processNameCache = new Map<number, string>();
+
+function getProcessName(pid: number): string {
+    if (processNameCache.has(pid)) {
+        return processNameCache.get(pid)!;
+    }
+
+    try {
+        const name = readFileSync(`/proc/${pid}/comm`, "utf-8").trim();
+        processNameCache.set(pid, name);
+        return name;
+    } catch {
+        return `pid-${pid}`;
+    }
+}
+
 export class NethogsMonitor extends EventEmitter {
     private process: ChildProcess | null = null;
     private isRunning = false;
     private data: Map<number, ProcessBandwidth> = new Map();
-    private checkInterval: ReturnType<typeof setInterval> | null = null;
 
-    /**
-     * Check if nethogs is available
-     */
     static isAvailable(): boolean {
         try {
             const { execSync } = require("child_process");
@@ -37,50 +42,34 @@ export class NethogsMonitor extends EventEmitter {
         }
     }
 
-    /**
-     * Check if running as root (required for nethogs)
-     */
     static isRoot(): boolean {
         return process.getuid?.() === 0;
     }
 
-    /**
-     * Start nethogs monitoring
-     */
-    start(devices: string[] = []): boolean {
-        if (this.isRunning) {
-            console.log("⚠️ Nethogs already running");
-            return true;
-        }
+    start(): boolean {
+        if (this.isRunning) return true;
 
         if (!NethogsMonitor.isRoot()) {
-            console.log("⚠️ Nethogs requires root privileges - bandwidth monitoring disabled");
+            console.log("[nethogs] Requires root - bandwidth disabled");
             return false;
         }
 
         if (!NethogsMonitor.isAvailable()) {
-            console.log("⚠️ Nethogs not installed - bandwidth monitoring disabled");
+            console.log("[nethogs] Not installed - bandwidth disabled");
             return false;
         }
 
         try {
-            // -t: tracemode (machine readable)
-            // -v 0: KB/s mode
-            // -C: capture TCP and UDP
-            // -b: short program name
-            const args = ["-t", "-v", "0", "-C", "-b", "-d", "1"];
-            if (devices.length > 0) {
-                args.push(...devices);
-            }
+            // -t: tracemode, -v 0: KB/s, -C: TCP+UDP
+            const args = ["-t", "-v", "0", "-C", "-d", "1"];
 
             this.process = spawn("nethogs", args, {
                 stdio: ["ignore", "pipe", "pipe"],
             });
 
             this.isRunning = true;
-            console.log("📊 Nethogs bandwidth monitoring started");
+            console.log("[nethogs] Started");
 
-            // Parse stdout line by line
             let buffer = "";
             this.process.stdout?.on("data", (chunk: Buffer) => {
                 buffer += chunk.toString();
@@ -88,128 +77,118 @@ export class NethogsMonitor extends EventEmitter {
                 buffer = lines.pop() || "";
 
                 for (const line of lines) {
-                    this.parseLine(line);
+                    this.parseLine(line.trim());
                 }
             });
 
             this.process.stderr?.on("data", (chunk: Buffer) => {
                 const msg = chunk.toString().trim();
-                if (msg && !msg.includes("Waiting")) {
-                    console.error("nethogs stderr:", msg);
+                if (msg && !msg.includes("Waiting") && !msg.includes("Adding") && !msg.includes("link") && !msg.includes("Ethernet")) {
+                    console.error("[nethogs]", msg);
                 }
             });
 
             this.process.on("error", (err) => {
-                console.error("Nethogs error:", err.message);
+                console.error("[nethogs] Error:", err.message);
                 this.isRunning = false;
             });
 
             this.process.on("exit", (code) => {
-                console.log(`Nethogs exited with code ${code}`);
+                if (code !== 0 && code !== null) {
+                    console.log(`[nethogs] Exit code ${code}`);
+                }
                 this.isRunning = false;
                 this.process = null;
             });
 
             return true;
         } catch (err) {
-            console.error("Failed to start nethogs:", err);
+            console.error("[nethogs] Failed:", err);
             return false;
         }
     }
 
     /**
-     * Parse a line from nethogs tracemode output
-     * Format: program/PID/user<TAB>device<TAB>sent<TAB>received
+     * Parse nethogs output
+     * Format: /path/program/PID/UID  sent  recv
+     * Examples:
+     *   /opt/google/chrome/chrome/171599/1000	538.493	18.39
+     *   /proc/self/exe/436574/1000	0.07	0.55
      */
     private parseLine(line: string): void {
-        if (!line.trim() || line.startsWith("Refresh")) return;
+        if (!line || line.startsWith("Refreshing") || line === "") return;
 
-        const parts = line.split("\t");
-        if (parts.length < 4) return;
+        const parts = line.split(/\s+/);
+        if (parts.length < 3) return;
 
         try {
-            // Parse program/PID/user format
-            const [programPart, device, sentStr, recvStr] = parts;
+            const programPart = parts[0];
+            const sent = parseFloat(parts[1]) || 0;
+            const recv = parseFloat(parts[2]) || 0;
 
-            // Extract program name and PID
-            // Format: /usr/bin/program/12345/user or program/12345/user
+            if (programPart.startsWith("unknown")) return;
+            if (sent === 0 && recv === 0) return;
+
+            // Parse: /path/program/PID/UID
             const segments = programPart.split("/");
             if (segments.length < 3) return;
 
-            // PID is second to last, user is last
-            const pidStr = segments[segments.length - 2];
+            const uid = segments.pop() || "0";
+            const pidStr = segments.pop() || "0";
             const pid = parseInt(pidStr, 10);
+
             if (isNaN(pid) || pid <= 0) return;
 
-            // Program name is everything before the PID
-            const nameSegments = segments.slice(0, -2);
-            const name = nameSegments.length > 0
-                ? nameSegments[nameSegments.length - 1] || nameSegments.join("/")
-                : "unknown";
-
-            const sent = parseFloat(sentStr) || 0;
-            const recv = parseFloat(recvStr) || 0;
-
-            // Get existing data to accumulate totals
-            const existing = this.data.get(pid);
+            // Get actual process name from /proc/{pid}/comm
+            // This avoids issues with "/proc/self/exe" showing as "self"
+            const name = getProcessName(pid);
 
             this.data.set(pid, {
                 pid,
                 name,
-                cmdline: programPart,
-                device: device || "?",
+                user: uid,
                 sentKBs: sent,
                 receivedKBs: recv,
-                sentTotal: (existing?.sentTotal || 0) + sent,
-                receivedTotal: (existing?.receivedTotal || 0) + recv,
             });
-
-            this.emit("data", this.data.get(pid));
         } catch {
-            // Ignore parse errors
+            // Ignore
         }
     }
 
-    /**
-     * Get current bandwidth data for all processes
-     */
     getData(): ProcessBandwidth[] {
+        // Clean up dead processes
+        for (const [pid] of this.data) {
+            try {
+                readFileSync(`/proc/${pid}/comm`);
+            } catch {
+                this.data.delete(pid);
+                processNameCache.delete(pid);
+            }
+        }
+
         return Array.from(this.data.values())
             .filter(p => p.sentKBs > 0 || p.receivedKBs > 0)
             .sort((a, b) => (b.sentKBs + b.receivedKBs) - (a.sentKBs + a.receivedKBs));
     }
 
-    /**
-     * Get top N processes by bandwidth
-     */
     getTop(n: number = 5): ProcessBandwidth[] {
         return this.getData().slice(0, n);
     }
 
-    /**
-     * Stop monitoring
-     */
     stop(): void {
         if (this.process) {
             this.process.kill("SIGTERM");
             this.process = null;
         }
-        if (this.checkInterval) {
-            clearInterval(this.checkInterval);
-            this.checkInterval = null;
-        }
         this.isRunning = false;
         this.data.clear();
-        console.log("📊 Nethogs monitoring stopped");
+        processNameCache.clear();
+        console.log("[nethogs] Stopped");
     }
 
-    /**
-     * Check if monitoring is active
-     */
     isActive(): boolean {
         return this.isRunning;
     }
 }
 
-// Singleton instance
 export const nethogsMonitor = new NethogsMonitor();
