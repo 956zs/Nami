@@ -14,7 +14,7 @@ interface InterfaceSelectorProps {
     onSelectInterface: (name: string) => void;
 }
 
-export function InterfaceSelector({
+export const InterfaceSelector = memo(function InterfaceSelector({
     interfaces,
     selectedInterface,
     onSelectInterface,
@@ -169,7 +169,7 @@ export function InterfaceSelector({
             )}
         </div>
     );
-}
+});
 
 function DetailRow({
     label,

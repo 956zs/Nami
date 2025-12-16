@@ -92,13 +92,18 @@ export function useNetworkStats(
                 }
             }
 
+            // Update interface history - only keep currently active interfaces
+            // This prevents memory leak from removed docker containers, VPNs, etc.
             setHistory((prev) => {
-                const newHistory = new Map(prev);
+                const newHistory = new Map<string, NetworkInterface[]>();
+
+                // Only keep interfaces that still exist in current data
                 for (const iface of filtered) {
-                    const existing = newHistory.get(iface.name) || [];
+                    const existing = prev.get(iface.name) || [];
                     const updated = [...existing, iface].slice(-maxDataPoints);
                     newHistory.set(iface.name, updated);
                 }
+
                 return newHistory;
             });
 

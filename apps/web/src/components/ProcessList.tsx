@@ -109,7 +109,7 @@ const ProcessItem = memo(function ProcessItem({ process, isExpanded, onToggle, c
     );
 });
 
-function SocketItem({ socket }: { socket: SocketInfo }) {
+const SocketItem = memo(function SocketItem({ socket }: { socket: SocketInfo }) {
     return (
         <div className="flex items-center gap-2 text-xs font-mono bg-slate-800/50 rounded p-2">
             <Badge
@@ -141,7 +141,7 @@ function SocketItem({ socket }: { socket: SocketInfo }) {
             </Badge>
         </div>
     );
-}
+});
 
 // Compact version for showing top processes on main page
 interface TopProcessesProps {

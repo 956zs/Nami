@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatBytes } from "@/lib/format";
+import pkg from "../package.json";
 
 const MemoizedChart = memo(NetworkChart);
 
@@ -54,7 +55,7 @@ function App() {
           <div className="flex items-center gap-2">
             <span className="text-xl sm:text-2xl">🐳</span>
             <h1 className="text-lg sm:text-xl font-semibold">Nami</h1>
-            <Badge variant="outline" className="border-cyan-600 text-cyan-400 text-xs">v2.1</Badge>
+            <Badge variant="outline" className="border-cyan-600 text-cyan-400 text-xs">v{pkg.version}</Badge>
             {bandwidthEnabled && (
               <Badge className="bg-green-600/20 text-green-400 border-green-600/30 text-xs hidden sm:inline-flex">
                 Bandwidth
@@ -207,7 +208,7 @@ function App() {
       {/* Footer */}
       <footer className="border-t border-slate-800 mt-8 py-4">
         <div className="max-w-7xl mx-auto px-4 text-center text-xs text-slate-600">
-          Nami Network Monitor v2.1 • {bandwidthEnabled ? "Bandwidth monitoring active" : "Run as root for bandwidth"}
+          Nami Network Monitor v{pkg.version} • {bandwidthEnabled ? "Bandwidth monitoring active" : "Run as root for bandwidth"}
         </div>
       </footer>
     </div>

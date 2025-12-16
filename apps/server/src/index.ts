@@ -87,9 +87,10 @@ if (isRoot) {
 }
 
 console.log(`
-Nami Network Monitor Server v2.1
+Nami Network Monitor Server v2.4
 --------------------------------
-Web:       http://localhost:${PORT}
+API:       http://localhost:${PORT}
+Web:       http://localhost:5173
 WebSocket: ws://localhost:${PORT}/ws
 --------------------------------
 Bandwidth: ${isRoot ? "enabled (nethogs)" : "disabled (need root)"}
