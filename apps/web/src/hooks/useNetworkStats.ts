@@ -52,6 +52,7 @@ export function useNetworkStats(
     const latestDataRef = useRef<NetworkStatsPayload | null>(null);
     const updateIntervalRef = useRef<number | null>(null);
     const connectRef = useRef<(() => void) | null>(null);
+    const reconnectIntervalRef = useRef(reconnectInterval);
 
     useEffect(() => {
         selectedInterfaceRef.current = selectedInterface;
@@ -155,7 +156,7 @@ export function useNetworkStats(
 
                 reconnectTimeoutRef.current = window.setTimeout(() => {
                     connectRef.current?.();
-                }, reconnectInterval);
+                }, reconnectIntervalRef.current);
             };
 
             ws.onerror = () => {
@@ -164,6 +165,11 @@ export function useNetworkStats(
         } catch {
             setError("Failed to connect");
         }
+    }, []); // Remove reconnectInterval dependency - use ref instead
+
+    // Keep reconnectInterval ref up to date
+    useEffect(() => {
+        reconnectIntervalRef.current = reconnectInterval;
     }, [reconnectInterval]);
 
     // Update connectRef whenever connect changes
@@ -171,15 +177,25 @@ export function useNetworkStats(
         connectRef.current = connect;
     }, [connect]);
 
+    // Only connect once on mount
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- WebSocket connection needs to be established on mount
         connect();
         return () => {
-            if (wsRef.current) wsRef.current.close();
-            if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-            if (disconnectDebounceRef.current) clearTimeout(disconnectDebounceRef.current);
+            if (wsRef.current) {
+                wsRef.current.close();
+                wsRef.current = null;
+            }
+            if (reconnectTimeoutRef.current) {
+                clearTimeout(reconnectTimeoutRef.current);
+                reconnectTimeoutRef.current = null;
+            }
+            if (disconnectDebounceRef.current) {
+                clearTimeout(disconnectDebounceRef.current);
+                disconnectDebounceRef.current = null;
+            }
         };
-    }, [connect]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- Only connect once on mount
+    }, []);
 
     return {
         interfaces,
