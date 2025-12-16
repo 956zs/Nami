@@ -4,6 +4,8 @@ import { getProcessNetworkInfo, getTopProcesses } from "./network/process";
 import { nethogsMonitor } from "./network/nethogs";
 import type { NetworkStatsPayload } from "./types";
 
+import pkg from "../package.json";
+
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
 const UPDATE_INTERVAL = 1000;
 
@@ -13,8 +15,8 @@ let statsLogInterval: ReturnType<typeof setInterval> | null = null;
 
 const app = new Elysia()
     .get("/", () => ({
-        message: "Nami Network Monitor Server v2.1",
-        version: "2.1.0",
+        message: `Nami Network Monitor Server v${pkg.version}`,
+        version: pkg.version,
         clients: clients.size,
         bandwidthEnabled: nethogsMonitor.isActive(),
         endpoints: {

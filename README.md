@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-2.1.0-blue)
+![Version](https://img.shields.io/badge/version-2.2.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Platform](https://img.shields.io/badge/platform-Linux-orange)
 
@@ -210,6 +210,11 @@ bun run build
 ---
 
 ## 更新日誌
+
+### v2.2.0 (2024-12-16)
+- 🔧 **WebSocket 優化** - 修復連線洩漏問題，每個分頁只建立一個連線
+- 🔧 **Lint 修復** - 修復所有 ESLint 錯誤（未使用變數、類型錯誤等）
+- 🔧 **圖表時間軸** - 改用相對時間顯示（-60s ~ 0s）
 
 ### v2.1.0 (2024-12-16)
 -  **Nethogs 整合** - 即時 per-process 流量監控 (需 root)
